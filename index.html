@@ -101,7 +101,7 @@
             <!-- مدخلات البيانات -->
             <div class="space-y-4 mb-6">
                 <!-- إيميل المعلم -->
-                <div class="bg-amber-50/80 p-4 rounded-2xl border border-amber-200">
+                <div id="teacherEmailBlock" class="bg-amber-50/80 p-4 rounded-2xl border border-amber-200">
                     <label class="block text-xs font-bold text-amber-900 mb-1 flex items-center justify-between">
                         <span><i class="fa-regular fa-paper-plane text-amber-700 ml-1"></i> البريد الإلكتروني للمشرف/المعلم (المستلم):</span>
                         <span class="text-[11px] text-emerald-700 font-bold"><i class="fa-solid fa-floppy-disk"></i> يُحفظ في المتصفح</span>
@@ -110,7 +110,7 @@
                     
                     <div class="mt-2.5 pt-2 border-t border-amber-200/70 text-[11px] text-amber-900/90 leading-relaxed flex items-start gap-1.5">
                         <i class="fa-solid fa-circle-info text-amber-600 mt-0.5 shrink-0"></i>
-                        <span><strong>تنبيه تفعيل FormSubmit:</strong> إذا كان هذا البريد يُستخدم لأول مرة مع الخدمة، فستصله رسالة تفعيل واحدة يضغط فيها على (Activate Form) لمرة واحدة فقط.</span>
+                        <span><strong>ملاحظة:</strong> تصل نسخة النتيجة إلى بريد المعلم تلقائياً بمجرد تسليم الطالب، دون أي خطوة إضافية من الطالب.</span>
                     </div>
                 </div>
 
@@ -252,7 +252,7 @@
 
             <!-- أزرار إضافية وإعادة الاختبار -->
             <div class="flex flex-wrap gap-2.5 justify-center pt-3 border-t border-gray-100">
-                <button onclick="sendMailtoReport()" class="flex-1 min-w-[200px] px-4 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold text-sm shadow transition flex items-center justify-center gap-2">
+                <button onclick="sendMailtoReport()" id="mailtoReportBtn" class="flex-1 min-w-[200px] px-4 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold text-sm shadow transition flex items-center justify-center gap-2">
                     <i class="fa-solid fa-paper-plane"></i> إرسال عبر تطبيق البريد (Mailto)
                 </button>
                 <button onclick="copyFullReport()" id="copyReportBtn" class="flex-1 min-w-[170px] px-4 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-sm border border-gray-300 transition flex items-center justify-center gap-2">
@@ -492,16 +492,41 @@
         let remainingSeconds = 600; // 10 دقائق
         let timeConsumedSeconds = 0;
 
+        /* =========================================================================
+           إعدادات إرسال النتيجة (عدّل هذه القيم فقط)
+           -------------------------------------------------------------------------
+           teacherEmail   : بريد المعلم الثابت. عند تعبئته يُخفى الحقل عن الطالب
+                            ولا يستطيع تغييره.
+           web3formsKey   : مفتاح خدمة Web3Forms المجانية (إرسال تلقائي مؤكد).
+                            احصل عليه من https://web3forms.com بنفس بريد المعلم.
+           appsScriptUrl  : رابط Google Apps Script (اختياري) لتسجيل النتائج في
+                            جدول Google أيضاً.
+           ========================================================================= */
+        const RESULT_CONFIG = {
+            teacherEmail: "",
+            web3formsKey: "",
+            appsScriptUrl: ""
+        };
+
         // تهيئة المتصفح
         window.addEventListener('DOMContentLoaded', () => {
-            const savedEmail = localStorage.getItem('tajweed_supervisor_email');
             const emailInput = document.getElementById('supervisorEmail');
-            if (savedEmail) {
-                emailInput.value = savedEmail;
-                supervisorEmailValue = savedEmail;
+            const teacherBlock = document.getElementById('teacherEmailBlock');
+
+            if (RESULT_CONFIG.teacherEmail) {
+                // بريد المعلم ثابت داخل الكود: لا يظهر للطالب ولا يستطيع تغييره
+                supervisorEmailValue = RESULT_CONFIG.teacherEmail;
+                emailInput.value = RESULT_CONFIG.teacherEmail;
+                teacherBlock.classList.add('hidden');
             } else {
-                emailInput.value = "teacher@example.com";
-                supervisorEmailValue = "teacher@example.com";
+                const savedEmail = localStorage.getItem('tajweed_supervisor_email');
+                if (savedEmail) {
+                    emailInput.value = savedEmail;
+                    supervisorEmailValue = savedEmail;
+                } else {
+                    emailInput.value = "teacher@example.com";
+                    supervisorEmailValue = "teacher@example.com";
+                }
             }
 
             // فحص ما إذا كان هذا المتصفح/الجهاز قد أنجز الاختبار مسبقاً
@@ -556,9 +581,12 @@
 
             const nameVal = nameInput.value.trim();
             const studentEmailVal = sEmailInput.value.trim().toLowerCase();
-            const supervisorEmailVal = emailInput.value.trim();
+            const fixedTeacher = RESULT_CONFIG.teacherEmail || "";
+            const supervisorEmailVal = fixedTeacher || emailInput.value.trim();
+            const supervisorRequired = !fixedTeacher && !RESULT_CONFIG.web3formsKey;
 
-            if (!nameVal || !studentEmailVal || !isValidEmail(studentEmailVal) || !supervisorEmailVal || !isValidEmail(supervisorEmailVal)) {
+            if (!nameVal || !studentEmailVal || !isValidEmail(studentEmailVal) ||
+                (supervisorRequired && (!supervisorEmailVal || !isValidEmail(supervisorEmailVal)))) {
                 validationAlert.textContent = "يرجى التأكد من إدخال اسم الطالب، بريده الإلكتروني، وبريد المعلم بصيغة صحيحة.";
                 validationAlert.classList.remove('hidden');
                 return;
@@ -577,7 +605,9 @@
             studentNameValue = nameVal;
             studentEmailValue = studentEmailVal;
             supervisorEmailValue = supervisorEmailVal;
-            localStorage.setItem('tajweed_supervisor_email', supervisorEmailValue);
+            if (supervisorEmailVal) {
+                localStorage.setItem('tajweed_supervisor_email', supervisorEmailValue);
+            }
 
             // اختيار 5 أسئلة عشوائية
             const randomFive = shuffle(TAJWEED_QUESTION_BANK).slice(0, 5);
@@ -843,7 +873,44 @@
             return body;
         }
 
-        // إرسال النتيجة فورياً وتلقائياً عبر FormSubmit AJAX بدون أخطاء
+        // إرسال النتيجة تلقائياً: Web3Forms ← Google Apps Script ← FormSubmit (احتياطي)
+        function buildResultPayload(score, durationText, fullReport) {
+            return {
+                subject: `نتيجة اختبار التجويد: ${studentNameValue} - ${score}/5`,
+                "اسم الطالب": studentNameValue,
+                "بريد الطالب": studentEmailValue,
+                student_email: studentEmailValue,
+                "الدرجة": `${score} من 5 (${(score / 5) * 100}%)`,
+                score: `${score}/5`,
+                "الوقت المستغرق": durationText,
+                "تاريخ الاختبار": new Date().toLocaleString('ar-SA'),
+                "حالة التسليم": remainingSeconds <= 0 ? "تسليم تلقائي لانتهاء الوقت (10 د)" : "تسليم بإنهاء الطالب",
+                "تقرير الأسئلة والتوثيق": fullReport,
+                report: fullReport
+            };
+        }
+
+        async function postJson(url, payload, timeoutMs) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs || 10000);
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    signal: controller.signal,
+                    body: JSON.stringify(payload)
+                });
+                let data = null;
+                try { data = await response.json(); } catch (e) { data = null; }
+                return { ok: response.ok, data: data };
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
+
         async function autoDispatchEmail(score, durationText) {
             const noticeBox = document.getElementById('emailNoticeBox');
             noticeBox.className = "mb-5 p-4 rounded-2xl border border-blue-200 bg-blue-50 text-blue-900 text-sm text-right";
@@ -852,75 +919,113 @@
                     <i class="fa-solid fa-paper-plane fa-bounce text-blue-600 text-lg"></i>
                     <div>
                         <p class="font-bold text-sm">جاري إرسال النتيجة تلقائياً وفورياً إلى بريد المعلم...</p>
-                        <p class="text-xs text-blue-700 font-mono mt-0.5" dir="ltr">المعلم: ${supervisorEmailValue} | الطالب: ${studentEmailValue}</p>
+                        <p class="text-xs text-blue-700 font-mono mt-0.5" dir="ltr">المعلم: ${supervisorEmailValue || 'غير محدد'} | الطالب: ${studentEmailValue}</p>
                     </div>
                 </div>
             `;
 
             const fullReport = compileEmailReport(score, durationText);
+            const payload = buildResultPayload(score, durationText, fullReport);
 
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 9000);
+            // 1) Web3Forms: إرسال تلقائي مؤكد (بدون أي تدخل من الطالب)
+            if (RESULT_CONFIG.web3formsKey) {
+                try {
+                    const res = await postJson('https://api.web3forms.com/submit', Object.assign({
+                        access_key: RESULT_CONFIG.web3formsKey,
+                        from_name: 'اختبار أحكام التجويد',
+                        replyto: studentEmailValue,
+                        email: studentEmailValue
+                    }, payload), 12000);
 
-                const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(supervisorEmailValue)}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    signal: controller.signal,
-                    body: JSON.stringify({
-                        _subject: `نتيجة اختبار التجويد: الطالب (${studentNameValue}) - الدرجة: ${score}/5`,
-                        _replyto: studentEmailValue,
-                        _template: "table",
-                        "اسم الطالب": studentNameValue,
-                        "بريد الطالب": studentEmailValue,
-                        "الدرجة": `${score} من 5 (${(score / 5) * 100}%)`,
-                        "الوقت المستغرق": durationText,
-                        "حالة التسليم": remainingSeconds <= 0 ? "تسليم تلقائي لانتهاء الوقت (10 د)" : "تسليم فوري بإنهاء الطالب",
-                        "تقرير الأسئلة والتوثيق": fullReport
-                    })
-                });
-
-                clearTimeout(timeoutId);
-
-                if (response.ok) {
-                    noticeBox.className = "mb-5 p-4 rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm text-right";
-                    noticeBox.innerHTML = `
-                        <div class="flex items-start gap-2.5">
-                            <i class="fa-solid fa-circle-check text-emerald-600 text-lg mt-0.5 shrink-0"></i>
-                            <div>
-                                <p class="font-bold text-sm">تم إرسال النتيجة آلياً وفورياً بنجاح تام!</p>
-                                <p class="text-xs text-emerald-800 mt-1 leading-relaxed">
-                                    وصلت التفاصيل كاملة إلى بريد المعلم: <span dir="ltr" class="font-mono font-bold">${supervisorEmailValue}</span> مع إمكانية الرد المباشر على بريد الطالب <span dir="ltr" class="font-mono font-bold">(${studentEmailValue})</span>.
-                                </p>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    showFallbackNotice("تم إعداد النتيجة البريدية بنجاح، يُرجى التأكد من تفعيل بريد المعلم في FormSubmit إذا كان جديداً.");
+                    if (res.ok && res.data && res.data.success) {
+                        showSuccessNotice('Web3Forms');
+                        return;
+                    }
+                    console.warn('Web3Forms response:', res.data);
+                } catch (err) {
+                    console.warn('Web3Forms failed:', err);
                 }
-            } catch (err) {
-                showFallbackNotice("تم حفظ التقرير محلياً؛ يمكن استخدام زر الإرسال عبر البريد أدناه.");
             }
+
+            // 2) Google Apps Script: تسجيل في جدول Google وإرسال بريد (اختياري)
+            if (RESULT_CONFIG.appsScriptUrl) {
+                try {
+                    await fetch(RESULT_CONFIG.appsScriptUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+                    showSuccessNotice('Google Apps Script');
+                    return;
+                } catch (err) {
+                    console.warn('Apps Script failed:', err);
+                }
+            }
+
+            // 3) FormSubmit: احتياطي يعمل بلا إعداد (قد يتطلب تفعيل البريد أول مرة)
+            const recipient = supervisorEmailValue || RESULT_CONFIG.teacherEmail;
+            if (recipient) {
+                try {
+                    const res = await postJson(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, Object.assign({
+                        _subject: payload.subject,
+                        _replyto: studentEmailValue,
+                        _template: 'table'
+                    }, payload), 9000);
+
+                    if (res.ok) {
+                        showSuccessNotice('FormSubmit');
+                        return;
+                    }
+                } catch (err) {
+                    console.warn('FormSubmit failed:', err);
+                }
+            }
+
+            showFallbackNotice();
         }
 
-        function showFallbackNotice(reason) {
+        function showSuccessNotice(serviceName) {
             const noticeBox = document.getElementById('emailNoticeBox');
+            const recipientLine = supervisorEmailValue
+                ? `وصلت التفاصيل كاملة إلى بريد المعلم: <span dir="ltr" class="font-mono font-bold">${supervisorEmailValue}</span>`
+                : 'وصلت التفاصيل كاملة إلى بريد المعلم المسجل في الخدمة';
+
+            noticeBox.className = "mb-5 p-4 rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm text-right";
+            noticeBox.innerHTML = `
+                <div class="flex items-start gap-2.5">
+                    <i class="fa-solid fa-circle-check text-emerald-600 text-lg mt-0.5 shrink-0"></i>
+                    <div>
+                        <p class="font-bold text-sm">تم إرسال النتيجة آلياً وفورياً بنجاح تام!</p>
+                        <p class="text-xs text-emerald-800 mt-1 leading-relaxed">
+                            ${recipientLine} مع إمكانية الرد المباشر على بريد الطالب <span dir="ltr" class="font-mono font-bold">(${studentEmailValue})</span>.
+                        </p>
+                        <p class="text-[11px] text-emerald-700/80 mt-1">الخدمة: ${serviceName}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showFallbackNotice() {
+            const noticeBox = document.getElementById('emailNoticeBox');
+            const mailtoBtn = document.getElementById('mailtoReportBtn');
+            const hasRecipient = !!(supervisorEmailValue || RESULT_CONFIG.teacherEmail);
+            if (mailtoBtn) mailtoBtn.classList.toggle('hidden', !hasRecipient);
+
             noticeBox.className = "mb-5 p-4 rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 text-sm text-right";
             noticeBox.innerHTML = `
                 <div class="flex items-start gap-2.5">
                     <i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg mt-0.5 shrink-0"></i>
                     <div>
-                        <p class="font-bold text-sm">تم توثيق التقرير (${reason})</p>
+                        <p class="font-bold text-sm">تعذّر الإرسال التلقائي لهذه المرة</p>
                         <p class="text-xs text-amber-800 mt-1 leading-relaxed">
-                            للتأكيد الفوري، يمكنك الضغط أدناه على <strong>"إرسال عبر تطبيق البريد (Mailto)"</strong> ليُفتح بريدك الإلكتروني بنقرة واحدة.
+                            تم حفظ التقرير كاملاً في هذه الصفحة. يمكنك نسخه أو حفظه كملف نصي أو إرساله عبر تطبيق البريد بالأسفل.
                         </p>
                     </div>
                 </div>
             `;
         }
+
 
         // فتح تطبيق البريد بنقرة زر واحدة
         function sendMailtoReport() {
@@ -934,7 +1039,12 @@
 
             const subject = encodeURIComponent(`نتيجة اختبار التجويد - الطالب: ${studentNameValue} (${score}/5)`);
             const body = encodeURIComponent(compileEmailReport(score, durationText));
-            window.location.href = `mailto:${supervisorEmailValue}?cc=${encodeURIComponent(studentEmailValue)}&subject=${subject}&body=${body}`;
+            const recipient = supervisorEmailValue || RESULT_CONFIG.teacherEmail;
+            if (!recipient) {
+                alert('لا يوجد بريد معلم محدد لإرسال التقرير إليه.');
+                return;
+            }
+            window.location.href = `mailto:${recipient}?cc=${encodeURIComponent(studentEmailValue)}&subject=${subject}&body=${body}`;
         }
 
         // نسخ التقرير النصي
