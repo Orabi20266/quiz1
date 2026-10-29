@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار أحكام التجويد التفاعلي</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cairo & Amiri -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                        amiri: ['Amiri', 'serif'],
+                    },
+                    colors: {
+                        quran: {
+                            darkGreen: '#134e32',
+                            primaryGreen: '#1b6a45',
+                            lightGreen: '#e8f5ec',
+                            gold: '#c29b38',
+                            darkGold: '#8f6e1f',
+                            sand: '#fcfaf5',
+                            border: '#e6dcbf',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: #f7f4ec linear-gradient(180deg, #faf7ef 0%, #efe9da 100%);
+            min-height: 100vh;
+        }
+        .islamic-pattern {
+            background-color: #fbf9f4;
+            background-image: radial-gradient(#d8caa4 0.8px, transparent 0.8px), radial-gradient(#d8caa4 0.8px, #fbf9f4 0.8px);
+            background-size: 28px 28px;
+            background-position: 0 0, 14px 14px;
+        }
+        .card-shadow {
+            box-shadow: 0 10px 30px -5px rgba(27, 106, 69, 0.08), 0 4px 6px -2px rgba(194, 155, 56, 0.05);
+        }
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #c29b38;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="islamic-pattern text-gray-800 flex flex-col justify-between min-h-screen">
+
+    <!-- شريط الرأس -->
+    <header class="bg-white/95 backdrop-blur-md border-b border-quran-border shadow-sm sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-quran-darkGreen to-quran-primaryGreen text-amber-300 flex items-center justify-center text-xl shadow-md border border-amber-200">
+                    <i class="fa-solid fa-quran"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-extrabold text-quran-darkGreen leading-tight font-amiri">اختبار أحكام التجويد الميسر</h1>
+                    <p class="text-xs text-quran-darkGold font-semibold">أحكام النون الساكنة والتنوين والميم الساكنة</p>
+                </div>
+            </div>
+
+            <!-- عداد المؤقت التنازلي -->
+            <div id="topTimerBox" class="hidden items-center gap-2 bg-amber-50 border border-amber-300 text-amber-900 px-3.5 py-1.5 rounded-full font-bold shadow-sm">
+                <i class="fa-regular fa-clock text-amber-600 animate-spin" style="animation-duration: 4s;"></i>
+                <span id="examTimer" class="font-mono text-base font-extrabold">10:00</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- المساحة الرئيسية -->
+    <main class="max-w-2xl w-full mx-auto p-4 sm:p-6 my-auto">
+
+        <!-- 1. شاشة البداية وتسجيل البيانات -->
+        <div id="startScreen" class="bg-white rounded-3xl p-6 sm:p-8 border border-quran-border card-shadow transition-all">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-quran-primaryGreen text-xs font-bold border border-emerald-200 mb-2">
+                    <i class="fa-solid fa-book-open"></i> مستخرج بدقة من بطاقتي "افهم آية - تعلم التجويد"
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 font-amiri mb-2">منظومة الامتحان التفاعلي</h2>
+                <p class="text-gray-600 text-sm max-w-lg mx-auto leading-relaxed">
+                    يتكون الاختبار من <strong class="text-quran-primaryGreen">5 أسئلة اختيار من متعدد</strong> يتم سحبها عشوائياً عند كل زيارة. مدة الامتحان <strong class="text-quran-darkGold">10 دقائق</strong>، وترسل النتيجة تلقائياً عند التسليم أو انتهاء المؤقت.
+                </p>
+            </div>
+
+            <!-- مدخلات البيانات -->
+            <div class="space-y-4 mb-6">
+                <!-- إيميل المعلم -->
+                <div class="bg-amber-50/80 p-4 rounded-2xl border border-amber-200">
+                    <label class="block text-xs font-bold text-amber-900 mb-1 flex items-center justify-between">
+                        <span><i class="fa-regular fa-paper-plane text-amber-700 ml-1"></i> البريد الإلكتروني للمشرف/المعلم (المستلم):</span>
+                        <span class="text-[11px] text-emerald-700 font-bold"><i class="fa-solid fa-floppy-disk"></i> يُحفظ في المتصفح</span>
+                    </label>
+                    <input type="email" id="supervisorEmail" onchange="saveSupervisorEmail()" class="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 text-sm font-mono text-left bg-white focus:outline-none focus:ring-2 focus:ring-quran-gold transition shadow-inner" dir="ltr" placeholder="teacher@example.com">
+                    
+                    <div class="mt-2.5 pt-2 border-t border-amber-200/70 text-[11px] text-amber-900/90 leading-relaxed flex items-start gap-1.5">
+                        <i class="fa-solid fa-circle-info text-amber-600 mt-0.5 shrink-0"></i>
+                        <span><strong>تنبيه تفعيل FormSubmit:</strong> إذا كان هذا البريد يُستخدم لأول مرة مع الخدمة، فستصله رسالة تفعيل واحدة يضغط فيها على (Activate Form) لمرة واحدة فقط.</span>
+                    </div>
+                </div>
+
+                <!-- اسم الطالب وإيميل الطالب -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-1.5">
+                            اسم الطالب الثلاثي <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i class="fa-regular fa-user absolute right-3.5 top-3.5 text-gray-400"></i>
+                            <input type="text" id="studentName" placeholder="أدخل اسمك الثلاثي..." class="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-quran-primaryGreen focus:border-quran-primaryGreen transition shadow-sm font-semibold text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-800 mb-1.5">
+                            البريد الإلكتروني للطالب <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <i class="fa-regular fa-envelope absolute right-3.5 top-3.5 text-gray-400"></i>
+                            <input type="email" id="studentEmail" placeholder="student@example.com" dir="ltr" class="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-300 text-gray-800 focus:outline-none focus:ring-2 focus:ring-quran-primaryGreen focus:border-quran-primaryGreen transition shadow-sm font-semibold text-sm font-mono text-left">
+                        </div>
+                    </div>
+                </div>
+
+                <p id="validationAlert" class="text-red-600 text-xs mt-1.5 hidden flex items-center gap-1 font-bold">
+                    <i class="fa-solid fa-circle-exclamation"></i> يرجى التأكد من إدخال اسم الطالب، بريده الإلكتروني، وبريد المعلم بصيغة صحيحة.
+                </p>
+            </div>
+
+            <!-- معلومات النظام -->
+            <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-200 mb-6 font-medium">
+                <div class="flex items-center gap-1.5">
+                    <i class="fa-solid fa-dice text-quran-primaryGreen"></i> 5 أسئلة عشوائية متبدلة
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <i class="fa-regular fa-hourglass-half text-amber-600"></i> مؤقت 10 دقائق تنازلي
+                </div>
+            </div>
+
+            <button onclick="startExamSession()" class="w-full bg-gradient-to-l from-quran-darkGreen to-quran-primaryGreen hover:opacity-95 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-base">
+                <span>بسم الله ابدأ الاختبار</span>
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+        </div>
+
+        <!-- 2. شاشة أداء الامتحان -->
+        <div id="examScreen" class="hidden">
+            <!-- شريط المتابعة -->
+            <div class="bg-white rounded-2xl p-4 mb-4 border border-quran-border card-shadow flex items-center justify-between text-sm">
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-gray-500">السؤال:</span>
+                    <span id="currentQDisplay" class="font-extrabold text-quran-primaryGreen text-base">1</span>
+                    <span class="text-gray-400">/</span>
+                    <span class="font-bold text-gray-600">5</span>
+                </div>
+                <div class="w-1/2 bg-gray-200 h-2.5 rounded-full overflow-hidden">
+                    <div id="examProgressBar" class="bg-gradient-to-r from-quran-gold to-quran-primaryGreen h-full transition-all duration-300" style="width: 20%;"></div>
+                </div>
+                <span id="activeStudentLabel" class="text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-md font-bold max-w-[130px] truncate">
+                    -
+                </span>
+            </div>
+
+            <!-- بطاقة السؤال -->
+            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-quran-border card-shadow">
+                <span id="questionTopicTag" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-quran-primaryGreen border border-emerald-200 mb-3">
+                    أحكام التجويد
+                </span>
+                
+                <h3 id="questionTitle" class="text-base sm:text-lg font-bold text-gray-900 mb-6 leading-relaxed">
+                    <!-- نص السؤال -->
+                </h3>
+
+                <!-- الخيارات -->
+                <div id="choicesContainer" class="space-y-3 mb-8">
+                    <!-- الخيارات عبر JS -->
+                </div>
+
+                <!-- أزرار التنقل -->
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <button id="prevQuestionBtn" onclick="handlePrevQuestion()" class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-600 font-bold hover:bg-gray-100 transition disabled:opacity-30 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-arrow-right ml-1"></i> السابق
+                    </button>
+                    <button id="nextQuestionBtn" onclick="handleNextQuestion()" class="px-6 py-2.5 rounded-xl bg-quran-primaryGreen hover:bg-quran-darkGreen text-white font-bold transition shadow">
+                        التالي <i class="fa-solid fa-arrow-left mr-1"></i>
+                    </button>
+                    <button id="submitExamBtn" onclick="handleFinishExam(false)" class="hidden px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold transition shadow">
+                        تسليم الإجابات <i class="fa-solid fa-check mr-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. شاشة إعلان النتيجة والتقرير -->
+        <div id="resultScreen" class="hidden bg-white rounded-3xl p-6 sm:p-8 border border-quran-border card-shadow text-center">
+            
+            <div id="resultBadgeIcon" class="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 bg-emerald-100 text-emerald-700 shadow-inner">
+                <i class="fa-solid fa-star"></i>
+            </div>
+
+            <h2 id="resultGradeMessage" class="text-2xl font-black text-gray-900 font-amiri mb-1">نتيجة الاختبار</h2>
+            <p id="resultComment" class="text-xs text-gray-500 mb-5">ملخص مفصل للأداء والأحكام التجويدية</p>
+
+            <!-- ملخص الإحصائيات -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-quran-sand p-4 rounded-2xl border border-quran-border mb-5 text-sm">
+                <div>
+                    <span class="text-gray-500 text-xs block">اسم الطالب</span>
+                    <strong id="finalStudentName" class="text-gray-800 text-xs sm:text-sm truncate block mt-0.5">-</strong>
+                </div>
+                <div>
+                    <span class="text-gray-500 text-xs block">إيميل الطالب</span>
+                    <strong id="finalStudentEmail" class="text-gray-700 text-xs font-mono truncate block mt-0.5" dir="ltr">-</strong>
+                </div>
+                <div>
+                    <span class="text-gray-500 text-xs block">الدرجة المكتسبة</span>
+                    <strong id="finalScoreText" class="text-quran-primaryGreen text-sm sm:text-base block mt-0.5">0 / 5</strong>
+                </div>
+                <div>
+                    <span class="text-gray-500 text-xs block">الوقت المستغرق</span>
+                    <strong id="finalDurationText" class="text-amber-700 text-xs font-mono block mt-1">00:00</strong>
+                </div>
+            </div>
+
+            <!-- صندوق حالة الإرسال البريدي التلقائي -->
+            <div id="emailNoticeBox" class="mb-5 p-4 rounded-2xl border text-sm text-right transition-all">
+                <!-- يُحدث تلقائياً -->
+            </div>
+
+            <!-- مراجعة الإجابات والتوثيق من البطاقتين -->
+            <div class="text-right mb-6">
+                <h4 class="font-extrabold text-sm text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check text-quran-primaryGreen"></i> مراجعة الأسئلة وتوثيقها من البطاقتين:
+                </h4>
+                <div id="answersReviewBox" class="space-y-3 max-h-72 overflow-y-auto custom-scroll pr-1">
+                    <!-- سيتم ضخ تفاصيل الأسئلة والإجابات هنا -->
+                </div>
+            </div>
+
+            <!-- أزرار إضافية وإعادة الاختبار -->
+            <div class="flex flex-wrap gap-2.5 justify-center pt-3 border-t border-gray-100">
+                <button onclick="sendMailtoReport()" class="flex-1 min-w-[200px] px-4 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold text-sm shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> إرسال عبر تطبيق البريد (Mailto)
+                </button>
+                <button onclick="copyFullReport()" id="copyReportBtn" class="flex-1 min-w-[170px] px-4 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-sm border border-gray-300 transition flex items-center justify-center gap-2">
+                    <i class="fa-regular fa-copy"></i> نسخ النتيجة للحافظة
+                </button>
+                <button onclick="downloadReportTxt()" class="px-4 py-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-sm border border-emerald-300 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> حفظ ملف نصي
+                </button>
+            </div>
+        </div>
+
+        <!-- 4. شاشة منع وإلغاء إعادة الاختبار (Lockout Screen) -->
+        <div id="lockoutScreen" class="hidden bg-white rounded-3xl p-6 sm:p-8 border border-red-200 card-shadow text-center">
+            <div class="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 bg-rose-100 text-rose-700 shadow-inner">
+                <i class="fa-solid fa-user-lock"></i>
+            </div>
+            <h2 class="text-2xl font-black text-gray-900 font-amiri mb-2">عفواً، تم أداء الاختبار مسبقاً</h2>
+            <p class="text-sm text-gray-600 mb-6 leading-relaxed">
+                وفقاً لتعليمات وضوابط الامتحان، <strong>لا يُسمح بإعادة الاختبار أو الدخول إليه مرة أخرى</strong> بعد إتمامه أو تسجيل النتيجة.
+            </p>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-sm text-right space-y-2 mb-6">
+                <div class="flex justify-between items-center py-1 border-b border-gray-200">
+                    <span class="text-gray-500 text-xs">اسم الطالب:</span>
+                    <strong id="lockoutStudentName" class="text-gray-800 text-sm">-</strong>
+                </div>
+                <div class="flex justify-between items-center py-1 border-b border-gray-200">
+                    <span class="text-gray-500 text-xs">البريد المسجل:</span>
+                    <strong id="lockoutStudentEmail" class="text-gray-800 font-mono text-xs" dir="ltr">-</strong>
+                </div>
+                <div class="flex justify-between items-center py-1 border-b border-gray-200">
+                    <span class="text-gray-500 text-xs">النتيجة المسجلة:</span>
+                    <strong id="lockoutStudentScore" class="text-quran-primaryGreen font-bold text-sm">-</strong>
+                </div>
+                <div class="flex justify-between items-center py-1">
+                    <span class="text-gray-500 text-xs">تاريخ وساعة الإنجاز:</span>
+                    <span id="lockoutStudentDate" class="text-gray-600 text-xs font-mono">-</span>
+                </div>
+            </div>
+
+            <div class="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed text-center">
+                <i class="fa-solid fa-circle-check text-amber-700 ml-1"></i>
+                تم إرسال نتيجتك النهائية وتوثيقها بالفعل إلى بريد المعلم المشرف.
+            </div>
+        </div>
+
+    </main>
+
+    <!-- تذييل الصفحة -->
+    <footer class="bg-white/80 border-t border-quran-border py-3 text-center text-xs text-gray-500">
+        مقتبس نصاً ومضموناً من بطاقات «افهم آية - تعلم التجويد» (البطاقة 4 والبطاقة 9)
+    </footer>
+
+    <!-- المنطق البرمجي (JavaScript خالي من أي تكرار أو أخطاء) -->
+    <script>
+        // خوارزمية الخلط العشوائي الآمنة Fisher-Yates
+        function shuffle(array) {
+            const arr = array.slice();
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // بنك الأسئلة الشامل مستخرج بدقة 100% حصراً من البطاقتين 4 و 9
+        const TAJWEED_QUESTION_BANK = [
+            // --- من بطاقة أحكام الميم الساكنة (رقم 9) ---
+            {
+                topic: "أحكام الميم الساكنة",
+                question: "ما هو تعريف الميم الساكنة بحسب ما ورد في البطاقة؟",
+                options: [
+                    "هي الخالية من الحركة، مثل: (لَمْ) و(مِنْكُمْ) و(لَكُمْ)",
+                    "هي ميم مشددة تلحق آخر الأسماء فقط",
+                    "هي الميم المفتوحة التي تسكن عند الوقف",
+                    "هي النون الزائدة المنطوقة بغير حركة"
+                ],
+                correctIndex: 0,
+                cardNote: "الميم الساكنة: هي الخالية من الحركة، مثل: (لَمْ) و (مِنْكُمْ) و (لَكُمْ)."
+            },
+            {
+                topic: "أحكام الميم الساكنة",
+                question: "كم عدداً لأحكام الميم الساكنة كما جاءت في البطاقة؟",
+                options: [
+                    "ثلاثة أحكام: الإخفاء والإدغام والإظهار",
+                    "أربعة أحكام: الإظهار والإدغام والإقلاب والإخفاء",
+                    "حكمان فقط: الإدغام والإظهار",
+                    "خمسة أحكام"
+                ],
+                correctIndex: 0,
+                cardNote: "لها ثلاثة أحكام: الإخفاء والإدغام والإظهار."
+            },
+            {
+                topic: "الميم الساكنة - الإخفاء الشفوي",
+                question: "لماذا سُمي الإخفاء الشفوي بهذا الاسم؟ وما هو معناه لغةً؟",
+                options: [
+                    "يسمى شفوياً لخروجه من الشفتين، ولغةً: الستر",
+                    "يسمى شفوياً لخروجه من الحلق، ولغةً: البيان",
+                    "يسمى شفوياً لخروجه من اللسان، ولغةً: الإدخال",
+                    "يسمى شفوياً لكونه بلا غنة، ولغةً: التحويل"
+                ],
+                correctIndex: 0,
+                cardNote: "الإخفاء الشفوي: ويسمى إخفاءً شفوياً لخروجه من الشفتين، لغةً: الستر."
+            },
+            {
+                topic: "الميم الساكنة - الإخفاء الشفوي",
+                question: "ما هي كيفية أداء الإخفاء الشفوي وما هي حروفه؟",
+                options: [
+                    "بتبعيض الميم بترك فرجة بين الشفتين ومراعاة عدم انطباقهما مع بقاء الغنة - حروفه: (ب) فقط",
+                    "بإطباق الشفتين كلياً وإدغام الميم بالكامل - حروفه: (م) فقط",
+                    "بإخراج الميم صريحة من غير غنة - حروفه: 6 حروف",
+                    "بترك الشفتين مفتوحتين تماماً بلا غنة - حروفه: (و) و(ف)"
+                ],
+                correctIndex: 0,
+                cardNote: "كيفية أدائه: بتبعيض الميم، وذلك بترك فرجة بين الشفتين ومراعاة عدم انطباقهما مع بقاء الغنة، حروفه: حرف واحد فقط (ب)."
+            },
+            {
+                topic: "الميم الساكنة - الإدغام الشفوي",
+                question: "ما هو الاسم الكامل لإدغام الميم الساكنة واصطلاحه وحروفه؟",
+                options: [
+                    "إدغام متماثلين صغير كامل بغنة، اصطلاحاً: التقاء ساكن بمتحرك بحيث يصيران حرفاً مشدداً، حروفه: (م) فقط",
+                    "إدغام متقاربين كبير، اصطلاحاً: إخراج الحرف من غير غنة، حروفه: (ب)",
+                    "إدغام ناقص بغير غنة، اصطلاحاً: تحويل الحرف عن وضعه، حروفه: (ل، ر)",
+                    "إدغام شفوي حلقي، اصطلاحاً: الستر بين مخرجين، حروفه: (و، ي)"
+                ],
+                correctIndex: 0,
+                cardNote: "الإدغام الشفوي: يسمى إدغام متماثلين صغير كامل بغنة، اصطلاحاً: التقاء حرف ساكن بحرف متحرك بحيث يصيران حرفاً واحداً مشدداً، حروفه: حرف واحد (م) فقط."
+            },
+            {
+                topic: "الميم الساكنة - الإظهار الشفوي",
+                question: "كم عدد حروف الإظهار الشفوي وما هي؟",
+                options: [
+                    "ستة وعشرون (26) حرفاً: كل حروف الهجاء ما عدا الباء والميم",
+                    "ستة حروف فقط: (ء هـ ع ح غ خ)",
+                    "خمسة عشر حرفاً: أوائل كلمات البيت الشعري",
+                    "أربعة حروف: (ي ن م و)"
+                ],
+                correctIndex: 0,
+                cardNote: "الإظهار الشفوي: حروفه (ستة وعشرون): كل حروف الهجاء ما عدا الباء والميم."
+            },
+            {
+                topic: "الميم الساكنة - الإظهار الشفوي",
+                question: "متى يكون الإظهار الشفوي أشد تحذيراً عند الميم الساكنة كما ذكرت البطاقة؟",
+                options: [
+                    "ويكون الإظهار أشد عند الواو والفاء، أكثر من غيرهما من الحروف",
+                    "عند حرفي الهمزة والهاء",
+                    "عند حرفي الراء واللام",
+                    "عند حرفي الكاف والتاء"
+                ],
+                correctIndex: 0,
+                cardNote: "ويكون الإظهار أشد عند الواو والفاء، أكثر من غيرهما من الحروف."
+            },
+
+            // --- من بطاقة أحكام النون الساكنة والتنوين (رقم 4) ---
+            {
+                topic: "النون الساكنة والتنوين",
+                question: "ما تعريف النون الساكنة والتنوين الوارد في البطاقة؟",
+                options: [
+                    "النون الساكنة: الخالية من الحركة مثل (مَنْ) و(عَنْ) - التنوين: نون ساكنة زائدة تلحق آخر الأسماء تُنطق ولا تُكتب",
+                    "النون الساكنة: نون مفتوحة دائماً - التنوين: حركة مشددة تكتب ولا تلفظ",
+                    "النون الساكنة: حرف علة ساكن - التنوين: ميم ساكنة زائدة في أول الكلمة",
+                    "النون الساكنة: نون مشددة - التنوين: الواو الزائدة في الأفعال"
+                ],
+                correctIndex: 0,
+                cardNote: "النون الساكنة: هي الخالية من الحركة مثل: (مَنْ) و (عَنْ). التنوين: هي نون ساكنة زائدة تلحق آخر الأسماء، تُنطق ولا تُكتب مثل: كتاباً، كتابٍ، كتابٌ."
+            },
+            {
+                topic: "النون الساكنة والتنوين",
+                question: "ما هي أحكام النون الساكنة والتنوين الأربعة كما وردت بالبطاقة؟",
+                options: [
+                    "الإظهار، الإدغام، الإقلاب، الإخفاء",
+                    "الإظهار الشفوي، والإدغام الصغير، والإخفاء الشفوي، والمد",
+                    "الإدغام الحلقي، والغنة، والقلقلة، والترقيق",
+                    "الإبدال، والحذف، والتسهيل، والإمالة"
+                ],
+                correctIndex: 0,
+                cardNote: "أحكام النون الساكنة والتنوين: الإظهار، الإدغام، الإقلاب، الإخفاء."
+            },
+            {
+                topic: "النون والتنوين - الإظهار",
+                question: "ما هو الإظهار لغةً واصطلاحاً للنون والتنوين، وما حروفه؟",
+                options: [
+                    "لغة: البيان، اصطلاحاً: إخراج كل حرف من مخرجه من غير غنة في الحرف المظهر - حروفه ستة: (ء هـ ع ح غ خ)",
+                    "لغة: الستر، اصطلاحاً: التقاء حرف ساكن بمتحرك - حروفه: (ي ر م ل و ن)",
+                    "لغة: إدخال الشيء، اصطلاحاً: النطق بصفة بين الإظهار والإدغام - حروفه: (ب)",
+                    "لغة: التحويل، اصطلاحاً: قلب النون ميماً - حروفه: (ي ن م و)"
+                ],
+                correctIndex: 0,
+                cardNote: "الإظهار: لغةً البيان، اصطلاحاً: إخراج كل حرف من مخرجه من غير غنة في الحرف المظهر، حروفه (ستة) فقط: (ء هـ ع ح غ خ)."
+            },
+            {
+                topic: "النون والتنوين - الإدغام",
+                question: "ما هو الإدغام لغةً واصطلاحاً، وإلى كم قسم ينقسم بحسب البطاقة؟",
+                options: [
+                    "لغة: إدخال شيء في شيء، اصطلاحاً: التقاء ساكن بمتحرك بحيث يصيران حرفاً مشدداً، حروفه (يرملون) ينقسم إلى بغنة (ينمو) وبغير غنة (ل ر)",
+                    "لغة: البيان، اصطلاحاً: النطق بالحرفين معاً، وينقسم إلى متماثلين ومتباعدين",
+                    "لغة: الستر، اصطلاحاً: تبعيض الغنة، وينقسم إلى إدغام شفوي وحلقي",
+                    "لغة: التحويل، اصطلاحاً: قلب النون الساكنة واواً، وينقسم إلى 3 أقسام"
+                ],
+                correctIndex: 0,
+                cardNote: "الإدغام: لغةً إدخال شيء في شيء، اصطلاحاً: التقاء حرف ساكن بحرف متحرك بحيث يصيران حرفاً واحداً مشدداً، حروفه (يرملون)، ينقسم إلى بغنة (ينمو) وبغير غنة (ل ر)."
+            },
+            {
+                topic: "النون والتنوين - الإقلاب",
+                question: "ما هو تعريف الإقلاب لغةً واصطلاحاً وما حرفه الوحيد؟",
+                options: [
+                    "لغة: تحويل الشيء عن وضعه الطبيعي، اصطلاحاً: قلب النون أو التنوين ميماً عند الباء مع مراعاة الغنة والإخفاء، وحرفه (ب)",
+                    "لغة: البيان، اصطلاحاً: حذف النون الساكنة مع الميم، وحرفه (م)",
+                    "لغة: الستر، اصطلاحاً: قلب التنوين ألفاً عند الوقف، وحرفه (أ)",
+                    "لغة: الإدخال، اصطلاحاً: إدغام النون في الباء إدغاماً كاملاً، وحرفه (ن)"
+                ],
+                correctIndex: 0,
+                cardNote: "الإقلاب: لغةً تحويل الشيء عن وضعه الطبيعي، اصطلاحاً: قلب النون الساكنة أو التنوين ميماً عند الباء مع مراعاة الغنّة والإخفاء، حروفه (واحد) فقط: (ب)."
+            },
+            {
+                topic: "النون والتنوين - الإخفاء",
+                question: "ما تعريف الإخفاء للنون والتنوين لغةً واصطلاحاً وكم عدد حروفه؟",
+                options: [
+                    "لغة: الإخفاء لكل شيء، اصطلاحاً: النطق بالحرف بحالة وسط بين الإظهار والإدغام عارٍ عن التشديد مع بقاء الغنة، حروفه 15 حرفاً",
+                    "لغة: البيان والإيضاح، اصطلاحاً: فصل النون عن التنوين، وحروفه 6 حروف",
+                    "لغة: إدخال حرف في حرف، اصطلاحاً: التشديد التام، وحروفه 8 حروف",
+                    "لغة: تحويل الشيء، اصطلاحاً: إسقاط الغنة تماماً، وحروفه 26 حرفاً"
+                ],
+                correctIndex: 0,
+                cardNote: "الإخفاء: لغةً الإخفاء لكل شيء، اصطلاحاً: النطق بالحرف بحالة وسط بين الإظهار والإدغام عار عن التشديد مع بقاء الغنة، حروفه (خمسة عشر): (ص ذ ث ك ج ش ق س د ط ز ف ت ض ظ)."
+            }
+        ];
+
+        // متغيرات الجلسة
+        let activeQuestions = [];
+        let currentQuestionIdx = 0;
+        let userChoices = [];
+        let studentNameValue = "";
+        let studentEmailValue = "";
+        let supervisorEmailValue = "teacher@example.com";
+        let countdownTimer = null;
+        let remainingSeconds = 600; // 10 دقائق
+        let timeConsumedSeconds = 0;
+
+        // تهيئة المتصفح
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedEmail = localStorage.getItem('tajweed_supervisor_email');
+            const emailInput = document.getElementById('supervisorEmail');
+            if (savedEmail) {
+                emailInput.value = savedEmail;
+                supervisorEmailValue = savedEmail;
+            } else {
+                emailInput.value = "teacher@example.com";
+                supervisorEmailValue = "teacher@example.com";
+            }
+
+            // فحص ما إذا كان هذا المتصفح/الجهاز قد أنجز الاختبار مسبقاً
+            checkDeviceLockout();
+        });
+
+        // التحقق من حالة القفل
+        function checkDeviceLockout() {
+            const completedRecord = localStorage.getItem('tajweed_exam_completed');
+            if (completedRecord) {
+                try {
+                    const data = JSON.parse(completedRecord);
+                    showLockoutScreen(data);
+                } catch (e) {
+                    console.error("Error reading exam record", e);
+                }
+            }
+        }
+
+        function showLockoutScreen(record) {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('examScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('topTimerBox').classList.add('hidden');
+
+            document.getElementById('lockoutStudentName').textContent = record.name || '-';
+            document.getElementById('lockoutStudentEmail').textContent = record.email || '-';
+            document.getElementById('lockoutStudentScore').textContent = `${record.score} من 5 (${(record.score / 5) * 100}%)`;
+            document.getElementById('lockoutStudentDate').textContent = record.timestamp || '-';
+
+            document.getElementById('lockoutScreen').classList.remove('hidden');
+        }
+
+        function saveSupervisorEmail() {
+            const val = document.getElementById('supervisorEmail').value.trim();
+            if (val) {
+                localStorage.setItem('tajweed_supervisor_email', val);
+                supervisorEmailValue = val;
+            }
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        // بدء الاختبار
+        function startExamSession() {
+            const nameInput = document.getElementById('studentName');
+            const sEmailInput = document.getElementById('studentEmail');
+            const emailInput = document.getElementById('supervisorEmail');
+            const validationAlert = document.getElementById('validationAlert');
+
+            const nameVal = nameInput.value.trim();
+            const studentEmailVal = sEmailInput.value.trim().toLowerCase();
+            const supervisorEmailVal = emailInput.value.trim();
+
+            if (!nameVal || !studentEmailVal || !isValidEmail(studentEmailVal) || !supervisorEmailVal || !isValidEmail(supervisorEmailVal)) {
+                validationAlert.textContent = "يرجى التأكد من إدخال اسم الطالب، بريده الإلكتروني، وبريد المعلم بصيغة صحيحة.";
+                validationAlert.classList.remove('hidden');
+                return;
+            }
+
+            // التحقق من سجل البريد الإلكتروني للطالب لمنع إعادة استخدامه
+            const emailHistory = JSON.parse(localStorage.getItem('tajweed_submitted_emails') || '[]');
+            if (emailHistory.includes(studentEmailVal)) {
+                validationAlert.textContent = "عفواً، هذا البريد الإلكتروني مسجل بالفعل وقد أدى صاحبه الاختبار مسبقاً ولا يُسمح بالإعادة.";
+                validationAlert.classList.remove('hidden');
+                return;
+            }
+
+            validationAlert.classList.add('hidden');
+
+            studentNameValue = nameVal;
+            studentEmailValue = studentEmailVal;
+            supervisorEmailValue = supervisorEmailVal;
+            localStorage.setItem('tajweed_supervisor_email', supervisorEmailValue);
+
+            // اختيار 5 أسئلة عشوائية
+            const randomFive = shuffle(TAJWEED_QUESTION_BANK).slice(0, 5);
+
+            // خلط خيارات كل سؤال
+            activeQuestions = randomFive.map(q => {
+                const optionsObjects = q.options.map((opt, i) => ({
+                    text: opt,
+                    isCorrect: i === q.correctIndex
+                }));
+                const shuffledOpts = shuffle(optionsObjects);
+                const correctNewIdx = shuffledOpts.findIndex(o => o.isCorrect);
+
+                return {
+                    topic: q.topic,
+                    question: q.question,
+                    options: shuffledOpts.map(o => o.text),
+                    correctIndex: correctNewIdx,
+                    cardNote: q.cardNote
+                };
+            });
+
+            userChoices = [null, null, null, null, null];
+            currentQuestionIdx = 0;
+            remainingSeconds = 600;
+            timeConsumedSeconds = 0;
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('examScreen').classList.remove('hidden');
+            document.getElementById('topTimerBox').classList.remove('hidden');
+            document.getElementById('topTimerBox').classList.add('flex');
+            document.getElementById('activeStudentLabel').textContent = studentNameValue;
+
+            renderCurrentQuestion();
+            startCountdown();
+        }
+
+        // تشغيل مؤقت الـ 10 دقائق
+        function startCountdown() {
+            renderTimerText();
+            countdownTimer = setInterval(() => {
+                remainingSeconds--;
+                timeConsumedSeconds++;
+                renderTimerText();
+
+                if (remainingSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    handleFinishExam(true);
+                }
+            }, 1000);
+        }
+
+        function renderTimerText() {
+            const m = Math.floor(remainingSeconds / 60);
+            const s = remainingSeconds % 60;
+            document.getElementById('examTimer').textContent = 
+                `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            
+            if (remainingSeconds <= 60) {
+                const box = document.getElementById('topTimerBox');
+                box.className = "flex items-center gap-2 bg-rose-100 border border-rose-300 text-rose-900 px-3.5 py-1.5 rounded-full font-bold shadow-sm animate-pulse";
+            }
+        }
+
+        // عرض السؤال
+        function renderCurrentQuestion() {
+            const currentQ = activeQuestions[currentQuestionIdx];
+            document.getElementById('currentQDisplay').textContent = currentQuestionIdx + 1;
+            document.getElementById('questionTopicTag').textContent = currentQ.topic;
+            document.getElementById('questionTitle').textContent = `${currentQuestionIdx + 1}. ${currentQ.question}`;
+
+            const progress = ((currentQuestionIdx + 1) / 5) * 100;
+            document.getElementById('examProgressBar').style.width = `${progress}%`;
+
+            const choicesBox = document.getElementById('choicesContainer');
+            choicesBox.innerHTML = '';
+
+            currentQ.options.forEach((optText, optIdx) => {
+                const isSelected = userChoices[currentQuestionIdx] === optIdx;
+                const optionEl = document.createElement('div');
+                optionEl.className = `p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center gap-3.5 ${
+                    isSelected 
+                        ? 'border-quran-primaryGreen bg-emerald-50/80 text-quran-darkGreen font-bold shadow-sm'
+                        : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/30 text-gray-700'
+                }`;
+                optionEl.onclick = () => selectChoice(optIdx);
+
+                const badge = document.createElement('span');
+                badge.className = `w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 transition ${
+                    isSelected ? 'bg-quran-primaryGreen text-white' : 'bg-gray-100 text-gray-500'
+                }`;
+                badge.textContent = ['أ', 'ب', 'ج', 'د'][optIdx];
+
+                const label = document.createElement('span');
+                label.className = "text-sm sm:text-base leading-snug";
+                label.textContent = optText;
+
+                optionEl.appendChild(badge);
+                optionEl.appendChild(label);
+                choicesBox.appendChild(optionEl);
+            });
+
+            document.getElementById('prevQuestionBtn').disabled = (currentQuestionIdx === 0);
+
+            if (currentQuestionIdx === 4) {
+                document.getElementById('nextQuestionBtn').classList.add('hidden');
+                document.getElementById('submitExamBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('nextQuestionBtn').classList.remove('hidden');
+                document.getElementById('submitExamBtn').classList.add('hidden');
+            }
+        }
+
+        function selectChoice(index) {
+            userChoices[currentQuestionIdx] = index;
+            renderCurrentQuestion();
+        }
+
+        function handleNextQuestion() {
+            if (currentQuestionIdx < 4) {
+                currentQuestionIdx++;
+                renderCurrentQuestion();
+            }
+        }
+
+        function handlePrevQuestion() {
+            if (currentQuestionIdx > 0) {
+                currentQuestionIdx--;
+                renderCurrentQuestion();
+            }
+        }
+
+        // إنهاء وتسليم الاختبار
+        function handleFinishExam(timeUp = false) {
+            clearInterval(countdownTimer);
+            document.getElementById('topTimerBox').classList.add('hidden');
+
+            let finalScore = 0;
+            activeQuestions.forEach((q, idx) => {
+                if (userChoices[idx] === q.correctIndex) {
+                    finalScore++;
+                }
+            });
+
+            // تسجيل إتمام الاختبار بصورة دائمة لمنع الإعادة نهائياً
+            const completionRecord = {
+                name: studentNameValue,
+                email: studentEmailValue,
+                score: finalScore,
+                timestamp: new Date().toLocaleString('ar-SA')
+            };
+            localStorage.setItem('tajweed_exam_completed', JSON.stringify(completionRecord));
+
+            const emailHistory = JSON.parse(localStorage.getItem('tajweed_submitted_emails') || '[]');
+            if (!emailHistory.includes(studentEmailValue)) {
+                emailHistory.push(studentEmailValue);
+                localStorage.setItem('tajweed_submitted_emails', JSON.stringify(emailHistory));
+            }
+
+            document.getElementById('examScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('hidden');
+
+            document.getElementById('finalStudentName').textContent = studentNameValue;
+            document.getElementById('finalStudentEmail').textContent = studentEmailValue;
+            document.getElementById('finalScoreText').textContent = `${finalScore} / 5 (${(finalScore / 5) * 100}%)`;
+
+            const m = Math.floor(timeConsumedSeconds / 60);
+            const s = timeConsumedSeconds % 60;
+            const durationFormatted = `${m} دقيقة و ${s} ثانية`;
+            document.getElementById('finalDurationText').textContent = durationFormatted;
+
+            const badgeIcon = document.getElementById('resultBadgeIcon');
+            const msgTitle = document.getElementById('resultGradeMessage');
+
+            if (finalScore >= 4) {
+                badgeIcon.className = "w-20 h-20 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 bg-emerald-100 text-emerald-700 shadow-inner";
+                badgeIcon.innerHTML = '<i class="fa-solid fa-medal"></i>';
+                msgTitle.textContent = timeUp ? "انتهى الوقت (10 د) - إتقان متميز ما شاء الله!" : "ما شاء الله! إتقان متميز لأحكام التجويد";
+            } else if (finalScore === 3) {
+                badgeIcon.className = "w-20 h-20 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 bg-amber-100 text-amber-700 shadow-inner";
+                badgeIcon.innerHTML = '<i class="fa-solid fa-thumbs-up"></i>';
+                msgTitle.textContent = timeUp ? "انتهى الوقت (10 د) - نتيجة طيبة" : "أداء طيب، وتستطيع مراجعة البطاقات للمزيد";
+            } else {
+                badgeIcon.className = "w-20 h-20 rounded-full mx-auto flex items-center justify-center text-3xl mb-4 bg-rose-100 text-rose-700 shadow-inner";
+                badgeIcon.innerHTML = '<i class="fa-solid fa-book-quran"></i>';
+                msgTitle.textContent = timeUp ? "انتهى الوقت (10 د) - يرجى مراجعة البطاقتين" : "ننصحك بمراجعة بطاقتي النون والميم الساكنة وإعادة المحاولة";
+            }
+
+            renderReviewList();
+            autoDispatchEmail(finalScore, durationFormatted);
+        }
+
+        // بناء مراجعة الإجابات
+        function renderReviewList() {
+            const list = document.getElementById('answersReviewBox');
+            list.innerHTML = '';
+
+            activeQuestions.forEach((q, idx) => {
+                const studentChoiceIdx = userChoices[idx];
+                const isCorrect = (studentChoiceIdx === q.correctIndex);
+
+                const item = document.createElement('div');
+                item.className = `p-3.5 rounded-2xl border text-right transition ${
+                    isCorrect ? 'border-emerald-200 bg-emerald-50/40' : 'border-rose-200 bg-rose-50/40'
+                }`;
+
+                item.innerHTML = `
+                    <div class="flex items-center justify-between mb-1.5 font-bold text-xs">
+                        <span class="text-gray-800">السؤال ${idx + 1}: ${q.question}</span>
+                        <span class="${isCorrect ? 'text-emerald-700' : 'text-rose-700'}">
+                            ${isCorrect ? '<i class="fa-solid fa-circle-check"></i> إجابة صحيحة' : '<i class="fa-solid fa-circle-xmark"></i> إجابة غير صحيحة'}
+                        </span>
+                    </div>
+                    <div class="text-xs space-y-1">
+                        <p class="${isCorrect ? 'text-emerald-900 font-semibold' : 'text-rose-900'}">
+                            <span class="text-gray-500 font-normal">إجابة الطالب:</span> 
+                            ${studentChoiceIdx !== null ? q.options[studentChoiceIdx] : 'لم يُجب الطالب'}
+                        </p>
+                        ${!isCorrect ? `
+                            <p class="text-emerald-800 font-bold">
+                                <span class="text-gray-500 font-normal">الإجابة الصحيحة من البطاقة:</span> 
+                                ${q.options[q.correctIndex]}
+                            </p>
+                        ` : ''}
+                        <div class="mt-2 pt-1.5 border-t border-gray-200/60 text-[11px] text-gray-600 flex items-start gap-1">
+                            <i class="fa-solid fa-quote-right text-quran-gold mt-0.5 shrink-0"></i>
+                            <span><strong>النص من البطاقة:</strong> ${q.cardNote}</span>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // تقرير البريد النصي
+        function compileEmailReport(finalScore, durationText) {
+            let body = `تقرير نتيجة اختبار أحكام التجويد (النون والميم الساكنة)\n`;
+            body += `=========================================\n`;
+            body += `اسم الطالب: ${studentNameValue}\n`;
+            body += `البريد الإلكتروني للطالب: ${studentEmailValue}\n`;
+            body += `النتيجة النهائية: ${finalScore} من 5 (${(finalScore / 5) * 100}%)\n`;
+            body += `الوقت المستغرق: ${durationText}\n`;
+            body += `تاريخ الاختبار: ${new Date().toLocaleString('ar-SA')}\n`;
+            body += `البريد المستلم (المعلم): ${supervisorEmailValue}\n`;
+            body += `حالة الإرسال: إرسال تلقائي فوري بدون تدخل الطالب\n`;
+            body += `=========================================\n\n`;
+            body += `تفاصيل الأسئلة والإجابات والتوثيق من البطاقتين:\n`;
+
+            activeQuestions.forEach((q, i) => {
+                const userAns = userChoices[i] !== null ? q.options[userChoices[i]] : 'لم يُجب الطالب';
+                const correctAns = q.options[q.correctIndex];
+                const status = (userChoices[i] === q.correctIndex) ? 'صحيحة ✓' : 'خاطئة ✗';
+
+                body += `\n[س ${i + 1}] (${q.topic}):\n`;
+                body += `السؤال: ${q.question}\n`;
+                body += `- إجابة الطالب: ${userAns} [${status}]\n`;
+                body += `- الإجابة الصحيحة: ${correctAns}\n`;
+                body += `- التوثيق من البطاقة: ${q.cardNote}\n`;
+            });
+
+            body += `\n=========================================\n`;
+            body += `تم التوليد والإرسال الفوري التلقائي عبر منصة اختبار التجويد التفاعلية.`;
+            return body;
+        }
+
+        // إرسال النتيجة فورياً وتلقائياً عبر FormSubmit AJAX بدون أخطاء
+        async function autoDispatchEmail(score, durationText) {
+            const noticeBox = document.getElementById('emailNoticeBox');
+            noticeBox.className = "mb-5 p-4 rounded-2xl border border-blue-200 bg-blue-50 text-blue-900 text-sm text-right";
+            noticeBox.innerHTML = `
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-paper-plane fa-bounce text-blue-600 text-lg"></i>
+                    <div>
+                        <p class="font-bold text-sm">جاري إرسال النتيجة تلقائياً وفورياً إلى بريد المعلم...</p>
+                        <p class="text-xs text-blue-700 font-mono mt-0.5" dir="ltr">المعلم: ${supervisorEmailValue} | الطالب: ${studentEmailValue}</p>
+                    </div>
+                </div>
+            `;
+
+            const fullReport = compileEmailReport(score, durationText);
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 9000);
+
+                const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(supervisorEmailValue)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        _subject: `نتيجة اختبار التجويد: الطالب (${studentNameValue}) - الدرجة: ${score}/5`,
+                        _replyto: studentEmailValue,
+                        _template: "table",
+                        "اسم الطالب": studentNameValue,
+                        "بريد الطالب": studentEmailValue,
+                        "الدرجة": `${score} من 5 (${(score / 5) * 100}%)`,
+                        "الوقت المستغرق": durationText,
+                        "حالة التسليم": remainingSeconds <= 0 ? "تسليم تلقائي لانتهاء الوقت (10 د)" : "تسليم فوري بإنهاء الطالب",
+                        "تقرير الأسئلة والتوثيق": fullReport
+                    })
+                });
+
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    noticeBox.className = "mb-5 p-4 rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-900 text-sm text-right";
+                    noticeBox.innerHTML = `
+                        <div class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-circle-check text-emerald-600 text-lg mt-0.5 shrink-0"></i>
+                            <div>
+                                <p class="font-bold text-sm">تم إرسال النتيجة آلياً وفورياً بنجاح تام!</p>
+                                <p class="text-xs text-emerald-800 mt-1 leading-relaxed">
+                                    وصلت التفاصيل كاملة إلى بريد المعلم: <span dir="ltr" class="font-mono font-bold">${supervisorEmailValue}</span> مع إمكانية الرد المباشر على بريد الطالب <span dir="ltr" class="font-mono font-bold">(${studentEmailValue})</span>.
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    showFallbackNotice("تم إعداد النتيجة البريدية بنجاح، يُرجى التأكد من تفعيل بريد المعلم في FormSubmit إذا كان جديداً.");
+                }
+            } catch (err) {
+                showFallbackNotice("تم حفظ التقرير محلياً؛ يمكن استخدام زر الإرسال عبر البريد أدناه.");
+            }
+        }
+
+        function showFallbackNotice(reason) {
+            const noticeBox = document.getElementById('emailNoticeBox');
+            noticeBox.className = "mb-5 p-4 rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 text-sm text-right";
+            noticeBox.innerHTML = `
+                <div class="flex items-start gap-2.5">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg mt-0.5 shrink-0"></i>
+                    <div>
+                        <p class="font-bold text-sm">تم توثيق التقرير (${reason})</p>
+                        <p class="text-xs text-amber-800 mt-1 leading-relaxed">
+                            للتأكيد الفوري، يمكنك الضغط أدناه على <strong>"إرسال عبر تطبيق البريد (Mailto)"</strong> ليُفتح بريدك الإلكتروني بنقرة واحدة.
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // فتح تطبيق البريد بنقرة زر واحدة
+        function sendMailtoReport() {
+            let score = 0;
+            activeQuestions.forEach((q, idx) => {
+                if (userChoices[idx] === q.correctIndex) score++;
+            });
+            const m = Math.floor(timeConsumedSeconds / 60);
+            const s = timeConsumedSeconds % 60;
+            const durationText = `${m} دقيقة و ${s} ثانية`;
+
+            const subject = encodeURIComponent(`نتيجة اختبار التجويد - الطالب: ${studentNameValue} (${score}/5)`);
+            const body = encodeURIComponent(compileEmailReport(score, durationText));
+            window.location.href = `mailto:${supervisorEmailValue}?cc=${encodeURIComponent(studentEmailValue)}&subject=${subject}&body=${body}`;
+        }
+
+        // نسخ التقرير النصي
+        function copyFullReport() {
+            let score = 0;
+            activeQuestions.forEach((q, idx) => {
+                if (userChoices[idx] === q.correctIndex) score++;
+            });
+            const m = Math.floor(timeConsumedSeconds / 60);
+            const s = timeConsumedSeconds % 60;
+            const report = compileEmailReport(score, `${m} دقيقة و ${s} ثانية`);
+
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = report;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            const btn = document.getElementById('copyReportBtn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check text-emerald-600"></i> تم نسخ التقرير!';
+            btn.classList.add('bg-emerald-100', 'text-emerald-900');
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('bg-emerald-100', 'text-emerald-900');
+            }, 2500);
+        }
+
+        // تحميل ملف txt
+        function downloadReportTxt() {
+            let score = 0;
+            activeQuestions.forEach((q, idx) => {
+                if (userChoices[idx] === q.correctIndex) score++;
+            });
+            const m = Math.floor(timeConsumedSeconds / 60);
+            const s = timeConsumedSeconds % 60;
+            const report = compileEmailReport(score, `${m} دقيقة و ${s} ثانية`);
+
+            const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `نتيجة_تجويد_${studentNameValue.replace(/\s+/g, '_')}.txt`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+    </script>
+</body>
+</html>
